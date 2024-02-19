@@ -38,6 +38,7 @@ func main() {
 	apiRouter.Get("/healthz", handlerReadiness)
 	apiRouter.Get("/reset", apiCfg.handlerReset)
 	apiRouter.Post("/users", apiCfg.handlerCreateUser)
+	apiRouter.Post("/login", apiCfg.handlerLogin)
 	apiRouter.Post("/chirps", apiCfg.handlerCreateChirp)
 	apiRouter.Get("/chirps", apiCfg.handlerGetChirp)
 	apiRouter.Get("/chirps/{userID}", apiCfg.handlerGetSpecificChirp)
@@ -58,30 +59,6 @@ func main() {
 	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(srv.ListenAndServe())
 }
-
-// func respondWithError(w http.ResponseWriter, code int, msg string) {
-// 	if code > 499 {
-// 		log.Printf("Responding with 5XX error: %s", msg)
-// 	}
-// 	type errorResponse struct {
-// 		Error string `json:"error"`
-// 	}
-// 	respondWithJSON(w, code, errorResponse{
-// 		Error: msg,
-// 	})
-// }
-
-// func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	dat, err := json.Marshal(payload)
-// 	if err != nil {
-// 		log.Printf("Error marshalling JSON: %s", err)
-// 		w.WriteHeader(500)
-// 		return
-// 	}
-// 	w.WriteHeader(code)
-// 	w.Write(dat)
-// }
 
 func naughtyChecker(chirp string) string {
 	cleanChirp := strings.ToLower(chirp)
