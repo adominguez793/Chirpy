@@ -26,11 +26,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = godotenv.Load()
+	err = godotenv.Load() // by default, godotenv will look for a file named .env in the current directory
 	if err != nil {
 		log.Fatalf("error loading .env file: %s\n", err)
 	}
-	jwtSecret := os.Getenv("JWT_SECRET")
+	jwtSecret := os.Getenv("JWT_SECRET") // os.Getenv in this case loads the JWT_SECRET var in .env
 
 	apiCfg := apiConfig{
 		fileserverHits: 0,
@@ -53,6 +53,9 @@ func main() {
 	apiRouter.Post("/chirps", apiCfg.handlerCreateChirp)
 	apiRouter.Get("/chirps", apiCfg.handlerGetChirp)
 	apiRouter.Get("/chirps/{userID}", apiCfg.handlerGetSpecificChirp)
+	apiRouter.Post("/refresh", apiCfg.handlerRefresh)
+	apiRouter.Post("/revoke", apiCfg.handlerRevoke)
+	apiRouter.Delete("/chirps/{chirpID}", apiCfg.handlerDeleteChirp)
 
 	adminRouter := chi.NewRouter()
 	adminRouter.Get("/metrics", apiCfg.handlerMetrics)

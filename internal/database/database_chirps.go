@@ -6,8 +6,9 @@ import (
 )
 
 type Chirp struct {
-	ID   int    `json:"id"`
-	Body string `json:"body"`
+	ID       int    `json:"id"`
+	Body     string `json:"body"`
+	AuthorID int    `json:"author_id"`
 }
 
 // GetChirps returns all chirps in the database
@@ -42,15 +43,41 @@ func (db *DB) GetSpecificChirp(userID int) (Chirp, error) {
 	return chirp, nil
 }
 
-func (db *DB) CreateChirp(body string) (Chirp, error) {
+func (db *DB) DeleteSpecificChirp(chirpID, userID int) error {
+	chirp, err := db.GetSpecificChirp(chirpID)
+	if err != nil {
+		return err
+	}
+
+	if chirp.AuthorID != userID {
+		fmt.Println("User is not the author of this chirp")
+		return errors.New("403")
+	}
+
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+	delete(dbStructure.Chirps, chirp.ID)
+
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db *DB) CreateChirp(body string, authorID int) (Chirp, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return Chirp{}, err
 	}
 	id := len(dbStructure.Chirps) + 1
 	chirp := Chirp{
-		ID:   id,
-		Body: body,
+		ID:       id,
+		Body:     body,
+		AuthorID: authorID,
 	}
 	dbStructure.Chirps[id] = chirp
 

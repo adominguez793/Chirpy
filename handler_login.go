@@ -17,9 +17,10 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		ExpirationInSeconds *int   `json:"expires_in_seconds"`
 	}
 	type returnVals struct {
-		ID    int    `json:"id"`
-		Email string `json:"email"`
-		Token string `json:"token"`
+		ID           int    `json:"id"`
+		Email        string `json:"email"`
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -52,9 +53,9 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	strID := strconv.Itoa(user.ID)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Issuer:    "chirpy",
+		Issuer:    "chirpy-access",
 		IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Duration(expiration) * time.Second)),
+		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Hour)),
 		Subject:   strID,
 	})
 	signedToken, err := token.SignedString([]byte(cfg.Secret))
@@ -62,9 +63,21 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "Failed to sign token")
 	}
 
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		Issuer:    "chirpy-refresh",
+		IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Duration(1440) * time.Hour)),
+		Subject:   strID,
+	})
+	signedRefreshToken, err := refreshToken.SignedString([]byte(cfg.Secret))
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to sign refresh token")
+	}
+
 	respondWithJSON(w, http.StatusOK, returnVals{
-		ID:    user.ID,
-		Email: params.Email,
-		Token: signedToken,
+		ID:           user.ID,
+		Email:        params.Email,
+		Token:        signedToken,
+		RefreshToken: signedRefreshToken,
 	})
 }
