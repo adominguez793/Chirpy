@@ -3,6 +3,7 @@ package database
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -59,6 +60,38 @@ func (db *DB) GetUserByEmail(email string) (User, error) {
 	}
 	fmt.Println("Provided email does not belong to any user.")
 	return User{}, errors.New("Bad email")
+}
+
+func (db *DB) UpdateUser(userID, newEmail, newPassword string) error {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+	encryptedNewPassword, err := encryptPassword(newPassword)
+	if err != nil {
+		return err
+	}
+	userIDInt, err := strconv.Atoi(userID)
+	if err != nil {
+		return err
+	}
+
+	_, existence := dbStructure.Users[userIDInt]
+	if existence {
+		dbStructure.Users[userIDInt] = User{
+			ID:       userIDInt,
+			Email:    newEmail,
+			Password: encryptedNewPassword,
+		}
+		err = db.writeDB(dbStructure)
+		if err != nil {
+			return err
+		}
+		return nil
+	} else {
+		fmt.Println("Provided user ID is not valid")
+		return errors.New("False ID")
+	}
 }
 
 func encryptPassword(password string) ([]byte, error) {
