@@ -23,10 +23,35 @@ func (cfg *apiConfig) handlerGetChirp(w http.ResponseWriter, r *http.Request) {
 			AuthorID: dbChirp.AuthorID,
 		})
 	}
-	sort.Slice(chirps, func(i, j int) bool {
-		return chirps[i].ID < chirps[j].ID
-	})
-	respondWithJSON(w, http.StatusOK, chirps)
+	trueOrFalse := true
+	optionalQuerySort := r.URL.Query().Get("sort")
+	if optionalQuerySort == "" || optionalQuerySort == "asc" {
+		trueOrFalse = true
+	}
+	if optionalQuerySort == "desc" {
+		trueOrFalse = false
+	}
+
+	sortedChirps := SortChirps(chirps, trueOrFalse)
+
+	strOptionalQueryAuthorID := r.URL.Query().Get("author_id")
+	if strOptionalQueryAuthorID == "" {
+		respondWithJSON(w, http.StatusOK, sortedChirps)
+		return
+	}
+	intOptionalQueryAuthorID, err := strconv.Atoi(strOptionalQueryAuthorID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to convert query from string to int")
+		return
+	}
+
+	specificAuthorChirps := []database.Chirp{}
+	for _, chirp := range sortedChirps {
+		if chirp.AuthorID == intOptionalQueryAuthorID {
+			specificAuthorChirps = append(specificAuthorChirps, chirp)
+		}
+	}
+	respondWithJSON(w, http.StatusOK, specificAuthorChirps)
 }
 
 func (cfg *apiConfig) handlerGetSpecificChirp(w http.ResponseWriter, r *http.Request) {
@@ -47,4 +72,18 @@ func (cfg *apiConfig) handlerGetSpecificChirp(w http.ResponseWriter, r *http.Req
 		Body: dbChirp.Body,
 		ID:   dbChirp.ID,
 	})
+}
+
+func SortChirps(chirps []database.Chirp, trueOrFalse bool) []database.Chirp {
+	if trueOrFalse == true {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].ID < chirps[j].ID
+		})
+		return chirps
+	} else {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].ID > chirps[j].ID
+		})
+		return chirps
+	}
 }

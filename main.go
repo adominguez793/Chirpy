@@ -15,6 +15,7 @@ type apiConfig struct {
 	fileserverHits int
 	DB             *database.DB
 	Secret         string
+	PolkaKey       string
 }
 
 func main() {
@@ -31,11 +32,13 @@ func main() {
 		log.Fatalf("error loading .env file: %s\n", err)
 	}
 	jwtSecret := os.Getenv("JWT_SECRET") // os.Getenv in this case loads the JWT_SECRET var in .env
+	polkaKey := os.Getenv("POLKA_KEY")
 
 	apiCfg := apiConfig{
 		fileserverHits: 0,
 		DB:             db,
 		Secret:         jwtSecret,
+		PolkaKey:       polkaKey,
 	}
 
 	router := chi.NewRouter()
@@ -56,6 +59,7 @@ func main() {
 	apiRouter.Post("/refresh", apiCfg.handlerRefresh)
 	apiRouter.Post("/revoke", apiCfg.handlerRevoke)
 	apiRouter.Delete("/chirps/{chirpID}", apiCfg.handlerDeleteChirp)
+	apiRouter.Post("/polka/webhooks", apiCfg.handlerPolka)
 
 	adminRouter := chi.NewRouter()
 	adminRouter.Get("/metrics", apiCfg.handlerMetrics)

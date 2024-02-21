@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/adominguez793/Chirpy/internal/database"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,10 +18,13 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		ExpirationInSeconds *int   `json:"expires_in_seconds"`
 	}
 	type returnVals struct {
-		ID           int    `json:"id"`
-		Email        string `json:"email"`
+		database.User
+		// ID           int    `json:"id"`
+		// Email        string `json:"email"`
+		// Token        string `json:"token"`
 		Token        string `json:"token"`
 		RefreshToken string `json:"refresh_token"`
+		// IsChirpyRed  bool   `json:"is_chirpy_red"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -75,8 +79,11 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, http.StatusOK, returnVals{
-		ID:           user.ID,
-		Email:        params.Email,
+		User: database.User{
+			ID:          user.ID,
+			Email:       user.Email,
+			IsChirpyRed: user.IsChirpyRed,
+		},
 		Token:        signedToken,
 		RefreshToken: signedRefreshToken,
 	})

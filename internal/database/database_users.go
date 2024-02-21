@@ -9,9 +9,10 @@ import (
 )
 
 type User struct {
-	ID       int    `json:"id"`
-	Email    string `json:"email"`
-	Password []byte `json:"password"`
+	ID          int    `json:"id"`
+	Email       string `json:"email"`
+	Password    []byte `json:"password"`
+	IsChirpyRed bool   `json:"is_chirpy_red"`
 }
 
 func (db *DB) CreateUser(email, password string) (User, error) {
@@ -34,9 +35,10 @@ func (db *DB) CreateUser(email, password string) (User, error) {
 
 	id := len(dbStructure.Users) + 1
 	user := User{
-		ID:       id,
-		Email:    email,
-		Password: encryptedPassword,
+		ID:          id,
+		Email:       email,
+		Password:    encryptedPassword,
+		IsChirpyRed: false,
 	}
 	dbStructure.Users[id] = user
 
@@ -101,4 +103,27 @@ func encryptPassword(password string) ([]byte, error) {
 		return nil, err
 	}
 	return encryptedPassword, nil
+}
+
+func (db *DB) UpgradeChirpyRed(userID int) (User, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	oldUser, ok := dbStructure.Users[userID]
+	if !ok {
+		return User{}, errors.New("User with this user ID doesn't exist")
+	}
+	dbStructure.Users[userID] = User{
+		ID:          oldUser.ID,
+		Email:       oldUser.Email,
+		Password:    oldUser.Password,
+		IsChirpyRed: true,
+	}
+	upgradedUser := dbStructure.Users[userID]
+
+	db.writeDB(dbStructure)
+
+	return upgradedUser, nil
 }
